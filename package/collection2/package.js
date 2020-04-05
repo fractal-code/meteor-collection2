@@ -1,9 +1,9 @@
 /* global Package */
 
 Package.describe({
-  name: "aldeed:collection2",
+  name: "talos:collection2",
   summary: "Automatic validation of Meteor Mongo insert and update operations on the client and server",
-  version: "3.0.6",
+  version: "3.0.6_1",
   documentation: "../../README.md",
   git: "https://github.com/aldeed/meteor-collection2.git"
 });

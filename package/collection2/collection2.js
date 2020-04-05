@@ -143,34 +143,34 @@ Mongo.Collection.prototype.attachSchema = function c2AttachSchema(ss, options) {
     if (schemas && schemas.length > 0) {
       if (!doc) throw new Error('collection.simpleSchema() requires doc argument when there are multiple schemas');
 
-      var schema, selector, target;
       // Position 0 reserved for base schema
-      for (var i = 1; i < schemas.length; i++) {
-        schema = schemas[i];
-        selector = Object.keys(schema.selector)[0];
+      for (let i = 1; i < schemas.length; i += 1) {
+        const currentSchema = schemas[i];
+        // Evaluate each condition in schema selector
+        selectorMatching = Object.keys(currentSchema.selector).every((selectorKey) => {
+          // We will set this to undefined because in theory you might want to select
+          // on a null value.
+          let target = undefined;
 
-        // We will set this to undefined because in theory you might want to select
-        // on a null value.
-        target = undefined;
+          // here we are looking for selector in different places
+          // $set should have more priority here
+          if (doc.$set && typeof doc.$set[selectorKey] !== 'undefined') {
+            target = doc.$set[selectorKey];
+          } else if (typeof doc[selectorKey] !== 'undefined') {
+            target = doc[selectorKey];
+          } else if (options && options.selectorKey) {
+            target = options.selector[selectorKey];
+          } else if (query && query[selectorKey]) { // on upsert/update operations
+            target = query[selectorKey];
+          }
 
-        // here we are looking for selector in different places
-        // $set should have more priority here
-        if (doc.$set && typeof doc.$set[selector] !== 'undefined') {
-          target = doc.$set[selector];
-        } else if (typeof doc[selector] !== 'undefined') {
-          target = doc[selector];
-        } else if (options && options.selector) {
-          target = options.selector[selector];
-        } else if (query && query[selector]) { // on upsert/update operations
-          target = query[selector];
-        }
-
-        // we need to compare given selector with doc property or option to
-        // find right schema
-        if (target !== undefined && target === schema.selector[selector]) {
-          return schema.schema;
-        }
+          // we need to compare given selector with doc property or option to
+          // find right schema
+          return (target !== undefined && target === currentSchema.selector[selectorKey]);
+        });
+        if (selectorMatching) { return currentSchema.schema; }
       }
+
       if (schemas[0]) {
         return schemas[0].schema;
       } else {
